@@ -8,13 +8,13 @@ public class Aim {
 	 */
 
 	// move towards target
-	public void moveTowardsTarget() {
-		// do stuff
+	public void aimZAxis() {
+		// aim body
 	}
 
 	// aim (update theta)
-	public void rotationAim() {
-		// naming is hard; guh
+	public void aimXAxis() {
+		// aim shooter
 	}
 }
 

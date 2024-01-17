@@ -3,37 +3,41 @@ package frc.utils;
 public class Shooter {
 	// insert particle physics
 
+	double[] robotPosition = new double[2];
+	double[] speakerPosition = new double[2];
+
 	/**
-	 * Takes the current position from VISION, aims the output device towards speaker, and fires it.
+	 * Takes the current position from VISION™, aims the output device towards speaker, and fires it.
+	 * @param xPos X position of robot, provided by VISION™
+	 * @param yPos Y position of robot, provided by VISiON™
 	 */
-	double xPos;
-	double yPos;
-
-	double speakerXPos;
-	double speakerYPos;
-
 	public Shooter(double xPos, double yPos) {
 		// get from vision
-		this.xPos = xPos;
-		this.yPos = yPos;
+		this.robotPosition[0] = xPos;
+		this.robotPosition[1] = yPos;
 
 		// calculate speaker position, take into account which side you're on
-		this.speakerXPos = 0;
-		this.speakerYPos = 0;
+		this.speakerPosition =  calculateSpeakerPosition(xPos, yPos);
+	}
+
+	public static double[] calculateSpeakerPosition(double xPos, double yPos) {
+		double[] speakerPosition = new double[2];
+		// TODO: calculate
+		return speakerPosition;
 	}
 
 	// move towards target
 	public static void aimZAxis() {
-		// aim body
+		// TODO: aim body
 	}
 
 	// aim (update theta)
 	public static void aimXAxis() {
-		// aim shooter
+		// TODO: aim shooter
 	}
 
 	public static void shoot() {
-		// robot.shooter.shoot();
+		// TODO: robot.shooter.shoot();
 	}
 }
 

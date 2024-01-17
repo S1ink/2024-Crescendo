@@ -3,6 +3,7 @@ package frc.utils;
 public class Shooter {
 	// insert particle physics
 
+	// {x,y}
 	double[] robotPosition = new double[2];
 	double[] speakerPosition = new double[2];
 

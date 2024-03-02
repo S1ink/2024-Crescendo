@@ -4,11 +4,12 @@
 
 package frc.robot.subsystems;
 
-import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.util.*;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -18,20 +19,19 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.*;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.WPIUtilJNI;
-import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
-import frc.robot.RobotContainer;
-import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.OIConstants;
-import frc.utils.SwerveUtils;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.OIConstants;
+import frc.utils.NavXGyro;
+import frc.utils.SwerveUtils;
 
 public class DriveSubsystem extends SubsystemBase {
   // Create MAXSwerveModules
@@ -58,7 +58,7 @@ public class DriveSubsystem extends SubsystemBase {
   // The gyro sensor
   // Using NavX
 
-  private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
+  private final NavXGyro m_gyro = new NavXGyro(SPI.Port.kMXP);
 
   private Field2d m_field = new Field2d();
 
@@ -89,36 +89,40 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putData("Field", m_field);
     // Configure AutoBuilder last
     AutoBuilder.configureHolonomic(
-      this::getPose, // Robot pose supplier
-      this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
-      this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-      this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
-      new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
-        new PIDConstants(Constants.ModuleConstants.kPPDrivingP, 
-          Constants.ModuleConstants.kPPDrivingI, Constants.ModuleConstants.kPPDrivingD), // Translation PID constants
-        new PIDConstants(Constants.ModuleConstants.kPPTurningP, 
-          Constants.ModuleConstants.kPPTurningI, Constants.ModuleConstants.kPPTurningD), // Rotation PID constants
-        Constants.DriveConstants.kMaxSpeedMetersPerSecond, // Max module speed, in m/s
-        Constants.DriveConstants.kBaseRadius, // Drive base radius in metbers. Distance from robot center to furthest module.
-        new ReplanningConfig() // Default path replanning config. See the API for the options here
+        this::getPose, // Robot pose supplier
+        this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
+        this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+        this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+        new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
+            new PIDConstants(Constants.ModuleConstants.kPPDrivingP,
+                Constants.ModuleConstants.kPPDrivingI, Constants.ModuleConstants.kPPDrivingD), // Translation PID
+                                                                                               // constants
+            new PIDConstants(Constants.ModuleConstants.kPPTurningP,
+                Constants.ModuleConstants.kPPTurningI, Constants.ModuleConstants.kPPTurningD), // Rotation PID constants
+            Constants.DriveConstants.kMaxSpeedMetersPerSecond, // Max module speed, in m/s
+            Constants.DriveConstants.kBaseRadius, // Drive base radius in metbers. Distance from robot center to
+                                                  // furthest module.
+            new ReplanningConfig() // Default path replanning config. See the API for the options here
         ),
-      () -> {
-        // Boolean supplier that controls when the path will be mirrored for the red alliance
-        // This will flip the path being followed to the red side of the field.
-        // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+        () -> {
+          // Boolean supplier that controls when the path will be mirrored for the red
+          // alliance
+          // This will flip the path being followed to the red side of the field.
+          // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
 
-        var alliance = DriverStation.getAlliance();
-        if (alliance.isPresent()) {
-          return alliance.get() == DriverStation.Alliance.Red;
-        }
+          var alliance = DriverStation.getAlliance();
+          if (alliance.isPresent()) {
+            return alliance.get() == DriverStation.Alliance.Red;
+          }
           return false;
-      },
-      this // Reference to this subsystem to set requirements
+        },
+        this // Reference to this subsystem to set requirements
     );
     // Load the path we want to pathfind to and follow
     PathPlannerPath path = PathPlannerPath.fromPathFile("T1");
 
-    // Create the constraints to use while pathfinding. The constraints defined in the path will only be used for the path.
+    // Create the constraints to use while pathfinding. The constraints defined in
+    // the path will only be used for the path.
     PathConstraints constraints = new PathConstraints(
         3.0, 4.0,
         Units.degreesToRadians(540), Units.degreesToRadians(720));
@@ -127,7 +131,8 @@ public class DriveSubsystem extends SubsystemBase {
     Command pathfindingCommand = AutoBuilder.pathfindThenFollowPath(
         path,
         constraints,
-        3.0 // Rotation delay distance in meters. This is how far the robot should travel before attempting to rotate.
+        3.0 // Rotation delay distance in meters. This is how far the robot should travel
+            // before attempting to rotate.
     );
 
   }
@@ -145,7 +150,8 @@ public class DriveSubsystem extends SubsystemBase {
         }));
     SmartDashboard.putNumber("X in meters", getPose().getX());
     SmartDashboard.putNumber("Y in meters", getPose().getY());
-    SmartDashboard.putNumber("Velocity", Math.sqrt(Math.pow(getChassisSpeeds().vxMetersPerSecond, 2.0) + Math.pow(getChassisSpeeds().vyMetersPerSecond, 2.0)));
+    SmartDashboard.putNumber("Velocity", Math.sqrt(
+        Math.pow(getChassisSpeeds().vxMetersPerSecond, 2.0) + Math.pow(getChassisSpeeds().vyMetersPerSecond, 2.0)));
   }
 
   /**
@@ -189,7 +195,7 @@ public class DriveSubsystem extends SubsystemBase {
     double xSpeedCommanded;
     double ySpeedCommanded;
     final boolean isStopped = Math.abs(xSpeed) <= (OIConstants.kDriveDeadband / 2.0)
-            && Math.abs(ySpeed) <= (OIConstants.kDriveDeadband / 2.0);
+        && Math.abs(ySpeed) <= (OIConstants.kDriveDeadband / 2.0);
 
     if (rateLimit) {
       // Convert XY to polar for rate limiting
@@ -292,6 +298,11 @@ public class DriveSubsystem extends SubsystemBase {
     m_gyro.reset();
   }
 
+  /** Zeroes the heading of the robot to be the given angle. */
+  public void zeroHeading(double angle) {
+    m_gyro.reset(angle);
+  }
+
   /**
    * Returns the heading of the robot.
    *
@@ -315,19 +326,18 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public ChassisSpeeds getChassisSpeeds() {
     ChassisSpeeds chassis_speed = Constants.DriveConstants.kDriveKinematics.toChassisSpeeds(
-      m_frontLeft.getState(), 
-      m_frontRight.getState(), 
-      m_rearLeft.getState(), 
-      m_rearRight.getState()
-      );
-      
+        m_frontLeft.getState(),
+        m_frontRight.getState(),
+        m_rearLeft.getState(),
+        m_rearRight.getState());
+
     return chassis_speed;
   }
 
   /**
    * Method that will drive the robot Robot Relative.
    */
-  public void driveRobotRelative(ChassisSpeeds speeds){
-    this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond,false,false);
+  public void driveRobotRelative(ChassisSpeeds speeds) {
+    this.drive(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond, false, false);
   }
 }

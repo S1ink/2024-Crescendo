@@ -32,6 +32,7 @@ import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.Flinger;
 import frc.robot.subsystems.FloorIntake;
+import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.commands.AutoGoCommand;
 import frc.robot.commands.DriveCommand;
 /*
@@ -48,6 +49,7 @@ public class RobotContainer extends TimedRobot {
   DriveSubsystem m_driveTrain = new DriveSubsystem();
   Flinger m_flinger = new Flinger();
   FloorIntake m_intake = new FloorIntake();
+  LightsSubsystem m_lights = new LightsSubsystem(m_intake, m_flinger);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -66,7 +68,8 @@ public class RobotContainer extends TimedRobot {
     Joystick r_attack3 = new Joystick(1);
     JoystickButton boostButton = new JoystickButton(l_attack3, 2);
     m_driveTrain.setDefaultCommand(
-        new DriveCommand(m_driveTrain, r_attack3::getX, r_attack3::getY, l_attack3::getX, ()-> boostButton.getAsBoolean()));
+        new DriveCommand(m_driveTrain, r_attack3::getX, r_attack3::getY, l_attack3::getX,
+            () -> boostButton.getAsBoolean()));
 
     JoystickButton flingButton = new JoystickButton(r_attack3, 1);
     flingButton.onTrue(new FlingCommand(m_flinger, m_intake));
@@ -75,6 +78,8 @@ public class RobotContainer extends TimedRobot {
     JoystickButton zeroHeadingButton = new JoystickButton(r_attack3, 7);
     zeroHeadingButton.onTrue(new ZeroHeadingCommand(m_driveTrain));
   }
+
+  
   // /**
   // * Use this to pass the autonomous command to the main {@link Robot} class.
   // *
